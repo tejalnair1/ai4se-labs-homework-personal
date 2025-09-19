@@ -1,6 +1,6 @@
 # AI4SE Labs
 
-This repository contains labs for CSCI 680-03 AI for Software Engineering.  
+This repository contains labs for CSCI 680-01 AI for Software Engineering.  
 
 ## Labs Overview
 
