@@ -1,0 +1,20 @@
+I began by first finding a repository that has over 25,000 methods in it. 
+Then I worked on cloning this repository. I then tried using the javalang package 
+to get the method names, but this wasn't working since there were trailing hashes. 
+So I then implemented functionality to deal with those hashes. I then checked back 
+to see then if the javalang package would work to get the method names and it did. 
+At this point, I had the file path and method names. So next step was to work on 
+the starting and ending lines. For this, I looked online at documentation for javalang
+and found that there we can get the starting position line of the method using 
+node.position.line. So then now that I had the starting position, it was about 
+getting the ending position. For this, I couldn't find any functionality online 
+that javalang has embedded in its package, so instead I reasoned about this by 
+assuming that ending position is the start of the next method's starting position 
+or it's the end of the file. So now, the next steps was getting the signature. 
+For this I created multiple helper functions to help with converting the necessary 
+components to strings. Once I had this, I could then tokenize this signature. Then 
+since I saved all this information in a list, I then converted this list to a csv 
+file. But, then I remembered I needed to go back to train/test split this. So I 
+randomly rearranged the methods list with all the information and then assigned 
+the first 25000 to train and the remaining (9303) to test. Then I wrote this all 
+to a csv file.   
