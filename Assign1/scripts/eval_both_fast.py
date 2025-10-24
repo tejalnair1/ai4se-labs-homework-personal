@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os, csv, re, math, ast
 from pathlib import Path
 from typing import List, Tuple
@@ -8,7 +7,6 @@ from datasets import load_dataset
 from transformers import T5ForConditionalGeneration, PreTrainedTokenizerFast
 from tqdm import tqdm
 
-# ----------------- Config (env overrides allowed) -----------------
 CKPT_DIR       = os.environ.get("CKPT_DIR", "runs/finetune_ifmask_mini/final")
 DATA_DIR       = os.environ.get("DATA_DIR", "data/instances_built")
 TEST_JSONL     = os.environ.get("TEST_PATH", f"{DATA_DIR}/test.jsonl")
@@ -18,7 +16,7 @@ OUT_DIR        = os.environ.get("OUT_DIR", DATA_DIR)
 GEN_OUT_NAME   = os.environ.get("GEN_OUT_NAME", "generated-testset.csv")
 PROV_OUT_NAME  = os.environ.get("PROV_OUT_NAME", "provided-testset.csv")
 
-# Speed / memory knobs
+# Speed
 BATCH_SIZE     = int(os.environ.get("EVAL_BATCH_SIZE", "32"))
 MAX_INPUT_LEN  = int(os.environ.get("EVAL_MAX_INPUT_LEN", "256"))
 GEN_MAX_NEW    = int(os.environ.get("GEN_MAX_NEW", "32"))
@@ -30,7 +28,7 @@ MAX_FUNCS_PER_ROW = int(os.environ.get("MAX_FUNCS_PER_ROW", "1"))  # 1 = one ins
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MASK_TOKEN = "[IF_MASK]"
 
-# ----------------- Canonicalization -----------------
+# Canonicalization
 def normalize_quotes_ws(s: str) -> str:
     s = s.strip().replace("’", "'").replace("“", '"').replace("”", '"')
     return " ".join(s.split())
@@ -52,7 +50,6 @@ def canonical_if_header(s: str) -> str:
         rest = normalize_quotes_ws(m.group("body"))
     return normalize_quotes_ws("if " + rest)
 
-# ----------------- IO helpers -----------------
 def write_csv(path: Path, rows: List[List[str]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as f:
@@ -70,7 +67,7 @@ def batchify_indices(n_items: int, batch_size: int):
     for i in range(0, n_items, batch_size):
         yield range(i, min(i + batch_size, n_items))
 
-# ----------------- Provided CSV → instances -----------------
+#  Provided CSV → instances
 def build_instances_from_code(src: str) -> List[Tuple[str, str]]:
     """Return list of (masked_function_text, label_if_header) for one code blob."""
     try:
@@ -99,7 +96,7 @@ def build_instances_from_code(src: str) -> List[Tuple[str, str]]:
                 masked[hdr_rel] = f"{indent}{MASK_TOKEN}\n"
                 out.append(("".join(masked), header_only.rstrip("\n")))
                 made += 1
-                if made >= MAX_FUNCS_PER_ROW:  # cap instances per function/file
+                if made >= MAX_FUNCS_PER_ROW:  # cap instances
                     break
     return out
 
@@ -120,7 +117,7 @@ def load_provided_codesearchnet(csv_path: str) -> Tuple[List[str], List[str]]:
                 labels.append(lab)
     return inputs, labels
 
-# ----------------- Eval core -----------------
+# Eval
 @torch.inference_mode()
 def eval_split(model, tok, inputs: List[str], labels: List[str], title: str) -> Tuple[List[List[str]], float, int, int]:
     rows, correct = [], 0
@@ -145,7 +142,7 @@ def eval_split(model, tok, inputs: List[str], labels: List[str], title: str) -> 
             enc.pop("token_type_ids")
         enc = {k: v.to(DEVICE) for k, v in enc.items()}
 
-        # only keep examples where [IF_MASK] survived truncation
+        # only keep examples where [IF_MASK] survived the truncation
         if KEEP_MASK_ONLY:
             ids = enc["input_ids"]
             keep_mask = (ids == mask_id).any(dim=1)
@@ -195,7 +192,7 @@ def main():
         except Exception:
             pass
 
-    # ---------- 1) Generated test.jsonl ----------
+    # 1) Generated test.jsonl
     if Path(TEST_JSONL).exists():
         ds = load_dataset("json", data_files={"d": TEST_JSONL})["d"]
         inputs_gen = list(ds["input"])
@@ -211,7 +208,7 @@ def main():
     else:
         print(f"[gen-test] skip: {TEST_JSONL} not found")
 
-    # ---------- 2) Provided CSV (CodeSearchNet style) ----------
+    # 2) Provided CSV
     if Path(PROVIDED_CSV).exists():
         print(f"[prov] building instances from {PROVIDED_CSV} …")
         inputs_p, labels_p = load_provided_codesearchnet(PROVIDED_CSV)
