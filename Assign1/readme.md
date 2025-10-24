@@ -52,7 +52,7 @@ Assign1/
 │   ├── train_tokenizer.py              # Tokenizer trainer
 │   └── get_data.ipynb                  # Notebook for dataset inspection
 ├── readme.md                           # Project documentation (this file)
-└── Assignment1.pdf                     # Final report write-up
+└── Assignment 1 Report.pdf                     # Final report write-up
 ```
 
 ---
